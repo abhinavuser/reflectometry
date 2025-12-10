@@ -1,0 +1,400 @@
+import { useState, useEffect } from "react"
+import Head from "next/head"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Badge } from "../components/ui/badge"
+import { Button } from "../components/ui/button"
+import { Progress } from "../components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import {
+  Activity,
+  Zap,
+  Shield,
+  AlertTriangle,
+  Eye,
+  Settings,
+  Bell,
+  LineChart,
+  Wifi,
+  Brain,
+  MapPin,
+  Download,
+  Clock,
+  Search
+} from "lucide-react"
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { AlertsPanel, SystemHealth, GeospatialMap, DataExport } from '../components/dashboard-components'
+import { NotificationsMenu } from '../components/NotificationsMenu'
+import { SettingsMenu } from '../components/SettingsMenu'
+import { useAlerts } from '../hooks/useAlerts'
+import { Input } from '../components/ui/input'
+
+export default function SASElectricFenceDetection() {
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [connectionStatus, setConnectionStatus] = useState('CONNECTING')
+  const [activeTab, setActiveTab] = useState('main')
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // State for realtime data
+  const [realtimeData, setRealtimeData] = useState([])
+  const [tdrData, setTdrData] = useState([])
+  const [predictions, setPredictions] = useState(null)
+  const [rcdStatus, setRcdStatus] = useState([])
+
+  // Custom hooks
+  const { alerts, unreadCount } = useAlerts()
+
+  useEffect(() => {
+    // Update time every second
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+
+    // Simulate connection status
+    setTimeout(() => setConnectionStatus('CONNECTED'), 2000)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    // Fetch initial data
+    fetchRealtimeData()
+    fetchTDRData()
+    fetchAIPredictions()
+    fetchRCDStatus()
+
+    // Set up polling intervals
+    const intervals = [
+      setInterval(fetchRealtimeData, 5000),
+      setInterval(fetchTDRData, 10000),
+      setInterval(fetchAIPredictions, 30000),
+      setInterval(fetchRCDStatus, 5000)
+    ]
+
+    return () => intervals.forEach(clearInterval)
+  }, [])
+
+  const fetchRealtimeData = async () => {
+    try {
+      const response = await fetch('/api/sas/realtime-data')
+      const data = await response.json()
+      setRealtimeData(data.measurements || [])
+    } catch (error) {
+      console.error('Failed to fetch realtime data:', error)
+    }
+  }
+
+  const fetchTDRData = async () => {
+    try {
+      const response = await fetch('/api/sas/tdr-analysis')
+      const data = await response.json()
+      setTdrData(data.tdrData || [])
+    } catch (error) {
+      console.error('Failed to fetch TDR data:', error)
+    }
+  }
+
+  const fetchAIPredictions = async () => {
+    try {
+      const response = await fetch('/api/sas/ai-prediction')
+      const data = await response.json()
+      setPredictions(data)
+    } catch (error) {
+      console.error('Failed to fetch AI predictions:', error)
+    }
+  }
+
+  const fetchRCDStatus = async () => {
+    try {
+      const response = await fetch('/api/sas/rcd-status')
+      const data = await response.json()
+      setRcdStatus(data.devices || [])
+    } catch (error) {
+      console.error('Failed to fetch RCD status:', error)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Head>
+        <title>Smart Substation Electric Fence Detection</title>
+        <meta name="description" content="Smart Substation Electric Fence Detection and Analysis Dashboard" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      {/* Header */}
+      <header className="border-b">
+        <div className="flex h-16 items-center px-4 gap-4">
+          <h2 className="text-lg font-semibold">Electric Fence Detection System</h2>
+          <div className="ml-auto flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                className="w-64 pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <NotificationsMenu />
+            <SettingsMenu />
+            <Badge variant={connectionStatus === 'CONNECTED' ? 'success' : 'destructive'} className="h-7">
+              <Wifi className="h-3 w-3 mr-1" />
+              {connectionStatus}
+            </Badge>
+            <Badge variant="outline" className="h-7">
+              <Clock className="h-3 w-3 mr-1" />
+              {currentTime.toLocaleTimeString()}
+            </Badge>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-4 space-y-4">
+        <Tabs defaultValue="main" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="main" className="flex items-center space-x-2">
+              <Activity className="h-4 w-4" />
+              <span>Main</span>
+            </TabsTrigger>
+            <TabsTrigger value="tdr" className="flex items-center space-x-2">
+              <LineChart className="h-4 w-4" />
+              <span>TDR Analysis</span>
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center space-x-2">
+              <Brain className="h-4 w-4" />
+              <span>AI Predictions</span>
+            </TabsTrigger>
+            <TabsTrigger value="rcd" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span>RCD Monitoring</span>
+            </TabsTrigger>
+            <TabsTrigger value="map" className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4" />
+              <span>Geospatial Map</span>
+            </TabsTrigger>
+            <TabsTrigger value="export" className="flex items-center space-x-2">
+              <Download className="h-4 w-4" />
+              <span>Data Export</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Main Tab */}
+          <TabsContent value="main" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{alerts.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {alerts.filter(a => a.severity === 'CRITICAL').length} critical
+                  </p>
+                  <Progress 
+                    value={alerts.length ? (alerts.filter(a => a.severity === 'CRITICAL').length / alerts.length) * 100 : 0} 
+                    className="mt-2"
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Power Consumption</CardTitle>
+                  <Zap className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {realtimeData[realtimeData.length - 1]?.powerKW?.toFixed(1) || '0'} kW
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {realtimeData[realtimeData.length - 1]?.efficiency?.toFixed(1) || '0'}% efficiency
+                  </p>
+                  <Progress 
+                    value={realtimeData[realtimeData.length - 1]?.efficiency || 0}
+                    className="mt-2"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Add more status cards */}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4">
+                <CardHeader>
+                  <CardTitle>Real-time Measurements</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                  <ResponsiveContainer width="100%" height={350}>
+                    <RechartsLineChart data={realtimeData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="timestamp" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip />
+                      <Legend />
+                      <Line yAxisId="left" type="monotone" dataKey="voltage" stroke="#8884d8" name="Voltage (V)" />
+                      <Line yAxisId="right" type="monotone" dataKey="current" stroke="#82ca9d" name="Current (A)" />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Recent Alerts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AlertsPanel />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="col-span-2">
+                <CardHeader>
+                  <CardTitle>System Health</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SystemHealth />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-2">
+                    <Button className="w-full justify-start">
+                      <Eye className="mr-2 h-4 w-4" />
+                      View All Alerts
+                    </Button>
+                    <Button className="w-full justify-start" variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export Report
+                    </Button>
+                    <Button className="w-full justify-start" variant="outline">
+                      <Settings className="mr-2 h-4 w-4" />
+                      System Settings
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* TDR Analysis Tab */}
+          <TabsContent value="tdr">
+            <Card>
+              <CardHeader>
+                <CardTitle>TDR Analysis Results</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={tdrData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="distance" label={{ value: 'Distance (m)', position: 'insideBottom', offset: -5 }} />
+                      <YAxis label={{ value: 'Reflection (dB)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="reflection" stroke="#8884d8" name="Reflection" />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* AI Predictions Tab */}
+          <TabsContent value="ai">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI-based Predictions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={predictions?.predictions || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="futureHour" label={{ value: 'Hours Ahead', position: 'insideBottom', offset: -5 }} />
+                      <YAxis label={{ value: 'Predicted Values', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="predictedVoltage" fill="#8884d8" name="Voltage (V)" />
+                      <Bar dataKey="predictedCurrent" fill="#82ca9d" name="Current (A)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* RCD Monitoring Tab */}
+          <TabsContent value="rcd">
+            <Card>
+              <CardHeader>
+                <CardTitle>RCD Status Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {rcdStatus.map((device) => (
+                    <Card key={device.id}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm font-medium">{device.name}</CardTitle>
+                          <Badge variant={device.status === 'ACTIVE' ? 'success' : 'destructive'}>
+                            {device.status}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Current Leakage:</span>
+                            <span>{device.leakageCurrent}mA</span>
+                          </div>
+                          <Progress value={(device.leakageCurrent / device.threshold) * 100} />
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Last Trip:</span>
+                            <span>{device.lastTrip || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Geospatial Map Tab */}
+          <TabsContent value="map">
+            <Card>
+              <CardHeader>
+                <CardTitle>Kerala Power Grid - Geospatial View</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[600px] rounded-lg overflow-hidden border">
+                  <GeospatialMap />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Data Export Tab */}
+          <TabsContent value="export">
+            <Card>
+              <CardHeader>
+                <CardTitle>Historical Data Export</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DataExport />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  )
+}

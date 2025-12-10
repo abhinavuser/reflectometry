@@ -1,0 +1,70 @@
+export const mockData = {
+  systemStatus: {
+    overall: "operational",
+    uptime: "99.8%",
+    lastUpdate: new Date().toLocaleTimeString(),
+    connectedDevices: 24,
+    totalDevices: 26,
+  },
+  substations: [
+    {
+      id: "SUB-001",
+      name: "Main Substation Alpha",
+      status: "operational",
+      voltage: 132.5,
+      current: 245.8,
+      power: 32.4,
+      alerts: 0,
+    },
+    {
+      id: "SUB-002",
+      name: "Distribution Hub Beta",
+      status: "warning",
+      voltage: 128.2,
+      current: 238.9,
+      power: 30.8,
+      alerts: 2,
+    },
+    {
+      id: "SUB-003",
+      name: "Grid Connection Delta",
+      status: "operational",
+      voltage: 133.1,
+      current: 242.3,
+      power: 31.9,
+      alerts: 0,
+    },
+  ],
+  alerts: [
+    {
+      id: "ALT-001",
+      type: "warning",
+      message: "Voltage fluctuation detected in Sector B",
+      timestamp: "2025-09-21T10:23:15",
+      substation: "SUB-002",
+    },
+    {
+      id: "ALT-002",
+      type: "critical",
+      message: "Possible intrusion attempt detected",
+      timestamp: "2025-09-21T10:15:00",
+      substation: "SUB-002",
+    },
+  ],
+  trends: {
+    voltage: [
+      { time: "10:00", value: 132.1 },
+      { time: "10:05", value: 132.3 },
+      { time: "10:10", value: 132.0 },
+      { time: "10:15", value: 132.4 },
+      { time: "10:20", value: 132.5 },
+    ],
+    current: [
+      { time: "10:00", value: 245.2 },
+      { time: "10:05", value: 245.5 },
+      { time: "10:10", value: 245.8 },
+      { time: "10:15", value: 245.6 },
+      { time: "10:20", value: 245.8 },
+    ],
+  },
+};
